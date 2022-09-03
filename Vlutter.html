@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Vlutter</title>
+        <style>
+            body {
+                background-color: black;
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                margin: unset;
+                width: 100vw;
+            }
+
+            header {
+                align-items: center;
+                background-color: white;
+                display: flex;
+                flex-direction: row;
+                flex: 0 0 48px;
+                justify-content: center;
+            }
+
+            main {
+                align-items: center;
+                background-color: black;
+                display: flex;
+                flex: 1 1 auto;
+                justify-content: center;
+            }
+
+            iframe {
+                background: black;
+                border: unset;
+            }
+        </style>
+    </head>
+    <body onload="onLoad()" onkeydown="onKeyDown(event)">
+        <header>
+            W: <input id="width" type="number" min="1" max="1920" />
+            &nbsp;H: <input id="height" type="number" min="1" max="1920" />
+            &nbsp;<button onClick="onSet()">Set</button>
+            &nbsp;<button onClick="onReset()">Reset</button>
+            &nbsp;<button onClick="onReload()">Reload</button>
+        </header>
+        <main>
+            <iframe id="iframe" src="http://localhost:12345"></iframe>
+        </main>
+    </body>
+    <script>
+        let widtheightElement;
+        let heightElement;
+        let iframeElement;
+
+
+        function onKeyDown(event) {
+            switch (event.key) {
+                case 'r':
+                case 'R':
+                    onReload();    
+                break;
+            }
+        }
+
+
+        function onLoad() {
+            widtheightElement = document.getElementById('width');
+            heightElement = document.getElementById('height');
+            iframeElement = document.getElementsByTagName('iframe')[0];
+
+            if (!window.sessionStorage.getItem('width') || !window.sessionStorage.getItem('height')) {
+                window.sessionStorage.setItem('width', 293);
+                window.sessionStorage.setItem('height', 633);
+            }
+
+            widtheightElement.value = window.sessionStorage.getItem('width');
+            heightElement.value = window.sessionStorage.getItem('height');
+            onSet();
+        }
+
+
+        function onReset() {
+            window.sessionStorage.setItem('width', 293);
+            window.sessionStorage.setItem('height', 633);
+            widtheightElement.value = window.sessionStorage.getItem('width');
+            heightElement.value = window.sessionStorage.getItem('height');
+            onSet();
+        }
+
+
+        function onSet() {
+            const width = widtheightElement.value;
+            const height = heightElement.value;
+            window.sessionStorage.setItem('width', width);
+            window.sessionStorage.setItem('height', height);
+            iframeElement.width = width;
+            iframeElement.height = height;
+        }
+
+
+        function onReload() {
+            // Little hack because iframeElement.contentWindow.location.reload() leads to CORS error
+            iframeElement.src += '' 
+        }
+    </script>
+</html>
