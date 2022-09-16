@@ -33,15 +33,59 @@
             iframe {
                 background: black;
                 border: unset;
+                -moz-transform-origin: 0 0;
+                -o-transform-origin: 0 0;
+                -webkit-transform-origin: 0 0;
+
+            }
+
+            iframe.zoom25 {
+                -ms-zoom: 0.25;
+                -moz-transform: scale(0.25);
+                -o-transform: scale(0.25);
+                -webkit-transform: scale(0.25);
+            }
+
+            iframe.zoom50 {
+                -ms-zoom: 0.5;
+                -moz-transform: scale(0.5);
+                -o-transform: scale(0.5);
+                -webkit-transform: scale(0.5);
+            }
+
+            iframe.zoom100 {
+                -ms-zoom: 1.0;
+                -moz-transform: scale(1.0);
+                -o-transform: scale(1.0);
+                -webkit-transform: scale(1.0);
+            }
+
+            iframe.zoom150 {
+                -ms-zoom: 1.5;
+                -moz-transform: scale(1.5);
+                -o-transform: scale(1.5);
+                -webkit-transform: scale(1.5);
             }
         </style>
     </head>
     <body onload="onLoad()" onkeydown="onKeyDown(event)">
         <header>
-            W: <input id="width" type="number" min="1" max="1920" />
-            &nbsp;H: <input id="height" type="number" min="1" max="1920" />
-            &nbsp;<button onClick="onSet()">Set</button>
-            &nbsp;<button onClick="onReset()">Reset</button>
+            <select name="preset" id="preset" onchange="onSelectPreset(this.value)")>
+              <option value="none">Custom</option>
+              <option value="1To1">1:1</option>
+              <option value="4To3">4:3</option>
+              <option value="appleIphone14">Apple iPhone 14</option>
+              <option value="googlePixel6">Google Pixel 6</option>
+              <option value="samsungS21">Samsung S21</option>
+            </select>
+            &nbsp;W: <input id="width" type="number" min="100" max="3000" onchange="onChangeWidth(this.value)" />
+            &nbsp;H: <input id="height" type="number" min="100" max="3000" onchange="onChangeHeight(this.value)" />
+            &nbsp;<select name="zoom" id="zoom" onchange="onSelectZoom(this.value)")>
+              <option value="150">150%</option>
+              <option value="100">100%</option>
+              <option value="50">50%</option>
+              <option value="25">25%</option>
+            </select>
             &nbsp;<button onClick="onReload()">Reload</button>
         </header>
         <main>
@@ -49,9 +93,31 @@
         </main>
     </body>
     <script>
-        let widtheightElement;
+        const screenPresetMap = new Map([
+            ['1To1', [120, 120, 150]],
+            ['4To3', [480, 360, 100]],
+            ['appleIphone14', [1170, 2532, 25]],
+            ['googlePixel6', [1080, 2400, 25]],
+            ['samsungS21', [1080, 2400, 25]],
+        ]);
         let heightElement;
         let iframeElement;
+        let presetElement;
+        let widthElement;
+        let zoomElement;
+
+
+        function onLoad() {
+            presetElement = document.getElementById('preset');
+            widthElement = document.getElementById('width');
+            heightElement = document.getElementById('height');
+            zoomElement = document.getElementById('zoom');
+            iframeElement = document.getElementById('iframe');
+
+            if (window.sessionStorage.getItem('preset') == null) window.sessionStorage.setItem('preset', 'appleIphone14');
+
+            onSelectPreset(window.sessionStorage.getItem('preset'));
+        }
 
 
         function onKeyDown(event) {
@@ -64,44 +130,65 @@
         }
 
 
-        function onLoad() {
-            widtheightElement = document.getElementById('width');
-            heightElement = document.getElementById('height');
-            iframeElement = document.getElementsByTagName('iframe')[0];
-
-            if (!window.sessionStorage.getItem('width') || !window.sessionStorage.getItem('height')) {
-                window.sessionStorage.setItem('width', 293);
-                window.sessionStorage.setItem('height', 633);
-            }
-
-            widtheightElement.value = window.sessionStorage.getItem('width');
-            heightElement.value = window.sessionStorage.getItem('height');
-            onSet();
-        }
-
-
-        function onReset() {
-            window.sessionStorage.setItem('width', 293);
-            window.sessionStorage.setItem('height', 633);
-            widtheightElement.value = window.sessionStorage.getItem('width');
-            heightElement.value = window.sessionStorage.getItem('height');
-            onSet();
-        }
-
-
-        function onSet() {
-            const width = widtheightElement.value;
-            const height = heightElement.value;
-            window.sessionStorage.setItem('width', width);
-            window.sessionStorage.setItem('height', height);
-            iframeElement.width = width;
-            iframeElement.height = height;
-        }
-
-
         function onReload() {
             // Little hack because iframeElement.contentWindow.location.reload() leads to CORS error
             iframeElement.src += '' 
+        }
+
+
+        function onSelectPreset(pValue) {
+            window.sessionStorage.setItem('preset', pValue);
+            presetElement.value = pValue;
+
+            switch (pValue) {
+                case 'none':
+                    heightElement.disabled = false;
+                    widthElement.disabled = false;
+                    onChangeWidth(window.sessionStorage.getItem('width'), false);
+                    onChangeHeight(window.sessionStorage.getItem('height'), false);
+                    onSelectZoom(window.sessionStorage.getItem('zoom'), false);
+                    break;
+                default:
+                    heightElement.disabled = true;
+                    widthElement.disabled = true;
+                    onChangeWidth(screenPresetMap.get(pValue)[0], false);
+                    onChangeHeight(screenPresetMap.get(pValue)[1], false);
+                    onSelectZoom(screenPresetMap.get(pValue)[2], false);
+                    break;
+            }
+
+            updateIframe();
+        }
+
+
+        function onChangeWidth(pValue, pUpdateIframe = true) {
+            window.sessionStorage.setItem('width', pValue);
+            widthElement.value = pValue;
+
+            if (pUpdateIframe) updateIframe();
+        }
+
+
+        function onChangeHeight(pValue, pUpdateIframe = true) {
+            window.sessionStorage.setItem('height', pValue);
+            heightElement.value = pValue;
+
+            if (pUpdateIframe) updateIframe();
+        }
+
+
+        function onSelectZoom(pValue, pUpdateIframe = true) {
+            window.sessionStorage.setItem('zoom', pValue);
+            zoomElement.value = pValue;
+
+            if (pUpdateIframe) updateIframe();
+        }
+
+
+        function updateIframe() {
+            iframeElement.width = window.sessionStorage.getItem('width');
+            iframeElement.height = window.sessionStorage.getItem('height');
+            iframeElement.className = `zoom${window.sessionStorage.getItem('zoom')}`;
         }
     </script>
 </html>
